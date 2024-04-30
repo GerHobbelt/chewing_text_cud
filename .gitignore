@@ -36,3 +36,6 @@
 *autosave.kra
 assets/[1-9a-z]*
 assets/*colo*
+
+/tmp
+
