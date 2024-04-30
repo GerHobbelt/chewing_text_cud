@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# logo/assets scratch
+*~
+*autosave.kra
+assets/[1-9a-z]*
+assets/*colo*
