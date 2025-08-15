@@ -94,10 +94,10 @@ namespace text_processing {
 
 			std::error_code ec;
 			if (const std::uintmax_t filesize = fs::file_size(p, ec); ec) {
-				std::cout << p.generic_string() << " : " << ec.message() << '\n';
+				if (false) std::cout << p.generic_string() << " : " << ec.message() << '\n';
 				return std::unexpected{ErrorResponse{std::errc::io_error, std::format("file size for file \"{}\" cannot be determined; {}", p.generic_string(), ec.message())}};
 			} else {
-				std::cout << p.generic_string() << " size = " << HumanReadable{filesize} << '\n';
+				if (false) std::cout << p.generic_string() << " size = " << HumanReadable{filesize} << '\n';
 
 				FileReader reader;
 				auto o = reader.open(p);
@@ -152,11 +152,11 @@ namespace text_processing {
 
 			std::error_code ec;
 			if (const std::uintmax_t filesize = fs::file_size(p, ec); ec) {
-				std::cout << p.generic_string() << " : " << ec.message() << '\n';
+				if (false) std::cout << p.generic_string() << " : " << ec.message() << '\n';
 				return std::unexpected{ErrorResponse{std::errc::io_error, std::format("file size for file \"{}\" cannot be determined; {}", p.generic_string(), ec.message())}};
 			}
 			else {
-				std::cout << p.generic_string() << " size = " << HumanReadable{filesize} << '\n';
+				if (false) std::cout << p.generic_string() << " size = " << HumanReadable{filesize} << '\n';
 
 				FileReader reader;
 				auto o = reader.open(p);
