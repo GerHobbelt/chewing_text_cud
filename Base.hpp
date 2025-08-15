@@ -52,6 +52,10 @@ namespace text_processing {
 		TextBuffer(const char *str, size_t length, size_t requested_buffer_size = 0);
 		TextBuffer(const std::string_view &str, size_t requested_buffer_size = 0);
 		TextBuffer(size_t requested_buffer_size = 0);
+	protected:
+		// helper for the other constructors: code deduplication
+		explicit TextBuffer(size_t requested_buffer_size, const std::string_view &str);
+	public:
 
 		~TextBuffer();
 
@@ -60,6 +64,8 @@ namespace text_processing {
 
 		TextBuffer& operator=(const TextBuffer& other);
 		TextBuffer& operator=(TextBuffer&& other);
+
+		TextBuffer& operator=(const std::string_view &str);
 
 		void reserve(size_t amount);
 		void reserve(size_t amount, std::error_code &ec);

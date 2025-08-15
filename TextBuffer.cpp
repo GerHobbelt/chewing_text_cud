@@ -39,21 +39,22 @@ namespace text_processing {
 	}
 
 	TextBuffer::TextBuffer(const char *str) :
-		_size(strlen(str)),
-		_capacity(_size + sentinel_size),
-		_data(alloc_and_copy_string(str, _size, _capacity)) {
+		TextBuffer(str, strlen(str)) {
 	}
 
 	TextBuffer::TextBuffer(const char *str, size_t length, size_t requested_buffer_size) :
-		_capacity(std::max(length + sentinel_size, requested_buffer_size)),
-		_size(length),
-		_data(alloc_and_copy_string(str, _size, _capacity)) {
+		TextBuffer(std::string_view(str, length), requested_buffer_size) {
 	}
 
 	TextBuffer::TextBuffer(const std::string_view &str, size_t requested_buffer_size) :
+		TextBuffer(std::max(str.length() + sentinel_size, requested_buffer_size), str) {
+	}
+
+	/* protected */
+	TextBuffer::TextBuffer(size_t requested_buffer_size, const std::string_view &str) :
 		_size(str.length()),
-		_capacity(std::max(_size + sentinel_size, requested_buffer_size)),
-		_data(alloc_and_copy_string(str.data(), _size, _capacity)) {
+		_capacity(requested_buffer_size),
+		_data(alloc_and_copy_string(str.data(), str.length(), requested_buffer_size)) {
 	}
 
 	// nuke/reset the Textbuffer
@@ -71,7 +72,7 @@ namespace text_processing {
 	}
 
 	TextBuffer::TextBuffer(const TextBuffer &src) {
-		std::cout << "move failed!\n";
+		if (false) std::cout << "copy constructed\n";
 
 		_data = reinterpret_cast<char *>(malloc(src._capacity));
 		if (_data == nullptr)
@@ -85,11 +86,18 @@ namespace text_processing {
 		_size(std::move(lvsrc._size)),
 		_data(std::move(lvsrc._data)),
 		_capacity(std::move(lvsrc._capacity)) {
+
+		if (false) std::cout << "move constructed\n";
+
+		// clear src but DO NOT free src._data as that one was moved into `*this`
+		lvsrc._data = nullptr;
+		lvsrc._size = 0;
+		lvsrc._capacity = 0;
 	}
 
 	TextBuffer& TextBuffer::operator=(const TextBuffer& src)
 	{
-		std::cout << "copy assigned\n";
+		if (false) std::cout << "copy assigned\n";
 
 		// only alloc the same amount as `src` when nothing has been prepared yet:
 		if (_data == nullptr) {
@@ -118,14 +126,47 @@ namespace text_processing {
 
 	TextBuffer& TextBuffer::operator=(TextBuffer&& src)
 	{
-		std::cout << "move assigned\n";
+		if (false) std::cout << "move assigned\n";
 
 		_size = std::move(src._size);
 		_data = std::move(src._data);
 		_capacity = std::move(src._capacity);
 
+		// clear src but DO NOT free src._data as that one was moved into `*this`
+		src._data = nullptr;
+		src._size = 0;
+		src._capacity = 0;
+
 		return *this;
 	}
+
+	TextBuffer& TextBuffer::operator=(const std::string_view &str) {
+		if (false) std::cout << "copy assigned\n";
+
+		// only alloc the same amount as `src` when nothing has been prepared yet:
+		if (_data == nullptr) {
+			_capacity = str.length() + sentinel_size;
+			_data = reinterpret_cast<char *>(malloc(_capacity));
+			if (_data == nullptr)
+				throw std::bad_alloc();
+		} else if (str.length() + sentinel_size >= _capacity) {
+			// redim to make `src` fit anyway.
+			auto l = str.length() + sentinel_size;
+			free(_data);
+			_data = reinterpret_cast<char *>(malloc(l));
+			if (_data == nullptr)
+				throw std::bad_alloc();
+			_capacity = l;
+		}
+
+		assert(_capacity >= str.length() + sentinel_size);
+		_size = str.length();
+		memcpy(_data, str.data(), _size);
+		memset(_data + _size, '\0', sentinel_size);
+
+		return *this;
+	}
+
 
 	void TextBuffer::reserve(size_t amount) {
 		assert(_data == nullptr);
