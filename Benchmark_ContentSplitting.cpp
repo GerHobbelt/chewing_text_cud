@@ -25,7 +25,7 @@ using namespace text_processing;
 
 namespace fs = std::filesystem;
 
-static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\__sqlite-odbc-mud-etc.dirlist.txt";
+static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\__scratch.dirlist.txt"; //"__sqlite-odbc-mud-etc.dirlist.txt";
 
 
 
@@ -107,14 +107,20 @@ BENCHMARK_F(SplitFileContentsFixture, BM_WithFixture)(benchmark::State& state) {
 			.accept_comment_lines = true
 		};
 
+		// preparation takes a while for very large input files...
+		state.PauseTiming();
 		ExtendedFileContent rv(this->data);
+		state.ResumeTiming();
+
 		std::error_code ec;
 		rv.parseContentAsLines(proc_opts, ec);
 		assert(!ec);
 		assert(rv.lines.size() > 10);
 
+		state.PauseTiming();
 		items_4_stats = rv.lines.size();
 		size_4_stats = this->data.content_size();
+		state.ResumeTiming();
 	}
 
 	state.SetBytesProcessed(state.iterations() * size_4_stats);

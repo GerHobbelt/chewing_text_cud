@@ -1,7 +1,7 @@
 
 #include "Base.hpp"
 
-#include <cstdlib>
+#include "PrivateIntrinsics.hpp"
 
 namespace text_processing {
 
@@ -79,7 +79,8 @@ namespace text_processing {
 			throw std::bad_alloc();
 		_size = src._size;
 		_capacity = src._capacity;
-		memcpy(_data, src._data, src._size);
+		assert(_size + sentinel_size <= _capacity);
+		memcpy(_data, src._data, src._size + sentinel_size);  // also copy the sentinel chunk
 	}
 
 	TextBuffer::TextBuffer(TextBuffer &&lvsrc):
@@ -119,7 +120,7 @@ namespace text_processing {
 		assert(_capacity >= src._size + sentinel_size);
 		_size = src._size;
 		memcpy(_data, src._data, src._size);
-		memset(_data + _size, '\0', sentinel_size);
+		write_buffer_edge_sentinel();
 
 		return *this;
 	}
@@ -162,7 +163,7 @@ namespace text_processing {
 		assert(_capacity >= str.length() + sentinel_size);
 		_size = str.length();
 		memcpy(_data, str.data(), _size);
-		memset(_data + _size, '\0', sentinel_size);
+		write_buffer_edge_sentinel();
 
 		return *this;
 	}
@@ -205,14 +206,20 @@ namespace text_processing {
 		_size = amount;
 	}
 
+	void TextBuffer::write_buffer_edge_sentinel(void) {
+		assert(_size + sentinel_size <= _capacity);
+		memset(_data + _size, '\0', sentinel_size);
+	}
+
 	void TextBuffer::CopyAndPrepare(const char *str, size_t strlength, size_t requested_buffer_size, std::error_code &ec) {
 		if (reserve(std::max(requested_buffer_size, strlength), ec), ec) {
 			return;
 		}
 		assert(_capacity >= strlength + 1);
 		memcpy(_data, str, strlength);
+		_size = strlength;
 		// plant a sentinel at the end.
-		_data[strlength] = '\0';
+		write_buffer_edge_sentinel();
 	}
 
 }

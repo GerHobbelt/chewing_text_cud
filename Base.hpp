@@ -45,7 +45,7 @@ namespace text_processing {
 		size_t _capacity = 0;
 
 	public:
-		static constexpr const size_t sentinel_size = 4;
+		static constexpr const size_t sentinel_size = 32;
 
 		//TextBuffer() = default;
 		TextBuffer(const char *str);
@@ -85,6 +85,8 @@ namespace text_processing {
 		std::string_view capacity_view() const {
 			return {_data, _capacity};
 		}
+
+		void write_buffer_edge_sentinel(void);
 
 		void set_content_size(size_t amount);
 
