@@ -25,7 +25,7 @@ using namespace text_processing;
 
 namespace fs = std::filesystem;
 
-static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\__scratch.dirlist.txt"; //"__sqlite-odbc-mud-etc.dirlist.txt";
+static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\___etc.dirlist.txt"; // "__scratch.dirlist.txt"; //"__sqlite-odbc-mud-etc.dirlist.txt";
 
 
 
