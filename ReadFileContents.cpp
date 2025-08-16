@@ -18,17 +18,21 @@ namespace text_processing {
 	namespace fs = std::filesystem;
 
 	FileReader::~FileReader() {
-		if (handle >= 0) {
-			::close(handle);
-			handle = -1;
-		}
+		close();
 		data.clear();
+	}
+
+	void FileReader::close(void) {
+		if (handle != nullptr) {
+			fclose(handle);
+			handle = nullptr;
+		}
 	}
 
 	std::optional<ErrorResponse> FileReader::open(const path &filepath) {
 		filespec = reinterpret_cast<const char *>(filepath.generic_u8string().c_str());
-		handle = ::open(filespec.c_str(), O_RDONLY);
-		if (handle < 0) {
+		handle = fopen(filespec.c_str(), "rb");
+		if (handle == nullptr) {
 			auto e = errno;
 			return ErrorResponse{std::errc::io_error, std::format("cannot open file \"{}\": error {}:{}", filespec, e, strerror(e))};
 		}
@@ -54,11 +58,12 @@ namespace text_processing {
 		[[assume(data.data() != nullptr)]]
 		__assume(data.data() != nullptr);
 
-		auto rv = ::read(handle, data.data(), amount);
-		if (rv < 0) {
+		auto rv = fread(data.data(), 1, amount, handle);
+		if (ferror(handle)) {
 			auto e = errno;
 			return std::unexpected{ErrorResponse{std::errc::io_error, std::format("cannot read file content of file \"{}\": error {}:{}", filespec, e, strerror(e))}};
 		}
+		assert(rv >= 0);
 		// write string sentinel:
 		data.data()[rv] = 0;
 
@@ -106,6 +111,7 @@ namespace text_processing {
 				auto r = reader.readAllContent(filesize);
 				if (!r.has_value())
 					return std::unexpected{r.error()};
+				reader.close();
 
 				FileContent rv(reader.data);
 				return rv;
@@ -171,6 +177,7 @@ namespace text_processing {
 				auto r = reader.readAllContent(filesize);
 				if (!r.has_value())
 					return std::unexpected{r.error()};
+				reader.close();
 
 				ExtendedFileContent rv(reader.data);
 

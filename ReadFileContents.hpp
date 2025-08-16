@@ -3,6 +3,7 @@
 #include "Base.hpp"
 
 #include <cstdint>
+#include <cstdio>
 
 
 namespace text_processing {
@@ -70,7 +71,7 @@ namespace text_processing {
 	// -----------------------------------------------------------------------
 
 	struct FileReader {
-		int handle = -1;
+		FILE* handle = nullptr;
 
 		TextBuffer data;
 
@@ -79,6 +80,7 @@ namespace text_processing {
 		~FileReader();
 
 		std::optional<ErrorResponse> open(const path &filepath);
+		void close(void);
 
 		bool reserve_bufferspace(size_t amount);
 

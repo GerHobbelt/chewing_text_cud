@@ -48,6 +48,31 @@ BM_ReadFileContents_Style_6              173467975 ns    171875000 ns           
 BM_ReadFileContents_Style_7               67337527 ns     68181818 ns           11 bytes_per_second=2.13504Gi/s
 BM_ReadFileContents_Style_8               68345136 ns     68181818 ns           11 bytes_per_second=2.13504Gi/s
 
+after patching FileReader to using C API fopen/fread/fclose in binary mode:
+
+2025-08-16T00:03:46+02:00
+Running Z:\lib\tooling\qiqqa\MuPDF\platform\win32\bin\Release-Unicode-64bit-x64\libchewing_text_cud_benchmarks.exe
+Run on (16 X 3593 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 512 KiB (x8)
+  L3 Unified 16384 KiB (x2)
+--------------------------------------------------------------------------------------------------
+Benchmark                                        Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------------
+SplitFileContentsFixture/BM_WithFixture  155399425 ns    156250000 ns            4 bytes_per_second=954.015Mi/s items_per_second=9.5698M/s
+SplitFileContentsFixture/BM_WithFixture  154769125 ns    156250000 ns            4 bytes_per_second=954.015Mi/s items_per_second=9.5698M/s
+BM_ReadFileContents_Style_8               71106336 ns     71022727 ns           11 bytes_per_second=2.04964Gi/s
+BM_ReadFileContents_Style_1              306478650 ns    304687500 ns            2 bytes_per_second=484.558Mi/s
+BM_ReadFileContents_Style_2             1301225800 ns   1312500000 ns            1 bytes_per_second=112.487Mi/s
+BM_ReadFileContents_Style_3             1269804700 ns   1265625000 ns            1 bytes_per_second=116.653Mi/s
+BM_ReadFileContents_Style_4              118435667 ns    119791667 ns            6 bytes_per_second=1.2152Gi/s
+BM_ReadFileContents_Style_5              166565625 ns    167968750 ns            4 bytes_per_second=878.966Mi/s
+BM_ReadFileContents_Style_6              152973920 ns    153125000 ns            5 bytes_per_second=964.172Mi/s
+BM_ReadFileContents_Style_7               70815373 ns     71022727 ns           11 bytes_per_second=2.04964Gi/s
+BM_ReadFileContents_Style_8               69748820 ns     70312500 ns           10 bytes_per_second=2.07035Gi/s
+
 */
 
 #include "ReadFileContents.hpp"
@@ -215,6 +240,7 @@ static void BM_ReadFileContents_Style_4(benchmark::State& state) {
 				LIBASSERT_UNREACHABLE(std::format("error processing file \"{}\": error {}:{}", filepath.generic_string(), int(r.error().code), r.error().message));
 			}
 			std::string_view v = reader.data.content_view();
+			reader.close();
 
 			size_4_stats = v.length();
 

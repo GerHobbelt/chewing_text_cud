@@ -180,7 +180,7 @@ static bool is_ascii_byte(byte c)
 // characters into buffer, however never will more than kMaxEncodedUTF8Size
 // bytes be written, regardless of the value of utf8_char.
 enum { kMaxEncodedUTF8Size = 4 };
-size_t EncodeUTF8Char(char* buffer, char32_t utf8_char);
+static size_t EncodeUTF8Char(char* buffer, char32_t utf8_char);
 
 struct ShiftState {
 	bool saw_high_surrogate = false;
@@ -194,11 +194,11 @@ struct ShiftState {
 //
 // This is basically std::wcrtomb(), but always outputting UTF-8 instead of
 // respecting the current locale.
-size_t WideToUtf8(wchar_t wc, char* buf, ShiftState& s);
+static size_t WideToUtf8(wchar_t wc, char* buf, ShiftState& s);
 
 
 
-size_t EncodeUTF8Char(char* buffer, char32_t utf8_char) {
+static size_t EncodeUTF8Char(char* buffer, char32_t utf8_char) {
 	if (utf8_char <= 0x7F) {
 		*buffer = static_cast<char>(utf8_char);
 		return 1;
@@ -226,7 +226,7 @@ size_t EncodeUTF8Char(char* buffer, char32_t utf8_char) {
 	}
 }
 
-size_t WideToUtf8(wchar_t wc, char* buf, ShiftState& s) {
+static size_t WideToUtf8(wchar_t wc, char* buf, ShiftState& s) {
 	// Reinterpret the output buffer `buf` as `unsigned char*` for subsequent
 	// bitwise operations. This ensures well-defined behavior for bit
 	// manipulations (avoiding issues with signed `char`) and is safe under C++
@@ -359,7 +359,7 @@ enum
 	Bad = Runeerror,
 };
 
-int
+static int
 fz_chartorune(uint32_t *rune, const unsigned char *str, size_t n)
 {
 	uint32_t c, c1, c2, c3;
@@ -442,7 +442,7 @@ bad:
 	return -1;
 }
 
-int
+static int
 fz_runetochar(unsigned char *str, uint32_t rune)
 {
 	/* Runes are unsigned, useful for range check. */

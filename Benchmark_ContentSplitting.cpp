@@ -71,6 +71,7 @@ public:
 					LIBASSERT_UNREACHABLE(std::format("error processing file \"{}\": error {}:{}", filepath.generic_string(), int(r.error().code), r.error().message));
 				}
 				std::string_view v = reader.data.content_view();
+				reader.close();
 
 				data.clear();
 				data = v;
@@ -120,5 +121,8 @@ BENCHMARK_F(SplitFileContentsFixture, BM_WithFixture)(benchmark::State& state) {
 	state.SetItemsProcessed(state.iterations() * items_4_stats);
 }
 
+
+#if 0   // BENCHMARK_F() already registers the benchmark method.
 BENCHMARK_REGISTER_F(SplitFileContentsFixture, BM_WithFixture);
+#endif
 

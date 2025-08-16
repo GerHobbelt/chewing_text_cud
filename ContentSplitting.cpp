@@ -18,8 +18,12 @@ namespace text_processing {
 		return c == ' ' || c == '\t';
 	}
 
-	static inline bool is_eol(const char c) {
+	static inline bool is_eolz(const char c) {
 		return c == '\r' || c == '\n' || c == '\0';
+	}
+
+	static inline bool is_eol_or_blank(const char c) {
+		return c == '\r' || c == '\n' || c == ' ' || c == '\t';
 	}
 
 	void ExtendedFileContent::parseContentAsLines(const FileContentProcessingOptions& options, std::error_code &ec) {
@@ -46,7 +50,7 @@ namespace text_processing {
 
 			case '#':
 				if (options.accept_comment_lines) {
-					while (!is_eol(ptr[i])) {
+					while (!is_eolz(ptr[i])) {
 						i++;
 					}
 					continue;
@@ -55,9 +59,10 @@ namespace text_processing {
 			default:
 				auto start = i;
 				// path MAY have INTERNAL whitespace:
-				while (!is_eol(ptr[i])) {
+				while (!is_eolz(ptr[i])) {
 					i++;
 				}
+				const auto ei = i;
 				i--;
 				// but trim off trailing whitespace!
 				while (is_blank(ptr[i])) {
@@ -69,6 +74,15 @@ namespace text_processing {
 				assert(!line.empty());
 
 				lines.push_back(line);
+
+				// as we are not interested in empty lines anyway, we can skip EOL chars until we hit the next non-empty line:
+				// this saves us several rounds through the main switch/case loop.
+				//
+				// continue beyond the trailing whitespace: no need to scan that stuff once again.
+				i = ei;
+				while (is_eol_or_blank(ptr[i])) {
+					i++;
+				}
 				continue;
 			}
 		}
@@ -98,7 +112,7 @@ namespace text_processing {
 
 			case '#':
 				if (options.accept_comment_lines) {
-					while (!is_eol(ptr[i])) {
+					while (!is_eolz(ptr[i])) {
 						i++;
 					}
 					continue;
@@ -107,7 +121,7 @@ namespace text_processing {
 			default:
 				auto start = i;
 				// path MAY have INTERNAL whitespace:
-				while (!is_eol(ptr[i])) {
+				while (!is_eolz(ptr[i])) {
 					i++;
 				}
 				i--;
