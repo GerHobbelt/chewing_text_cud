@@ -56,6 +56,6 @@ Here's a breakdown of the process:
     
 6. Tools:
 
-   Tools like JFLAP can be used to visualize and construct NFAs from regular expressions.
+   Tools like [JFLAP](https://www.jflap.org/tutorial/regular/index.html) can be used to visualize and construct NFAs from regular expressions.
   
 
