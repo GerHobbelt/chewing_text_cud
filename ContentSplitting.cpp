@@ -86,12 +86,13 @@ namespace text_processing {
 		}
 		actions['\r'] = MarkEndOfLine;
 		actions['\n'] = MarkEndOfLine;
+		actions['\f'] = MarkEndOfLine;
 		if (options.accept_comment_lines) {
 			actions['#'] = SkipCommentLine;
 		}
 
 		std::string_view d = file_content.content_view();
-		file_content.write_buffer_edge_sentinel();
+		file_content.write_text_edge_sentinel();
 
 		// apply heuristic to estimate the number of lines that will be found
 		lines.reserve(d.size() / 10);
@@ -155,50 +156,188 @@ namespace text_processing {
 	void ExtendedFileContent::parseContentAsParagraphs(const FileContentProcessingOptions& options, std::error_code &ec) {
 		ec.clear();
 
-		std::string_view d = file_content.content_view();
+		// prep the actions table
+		enum Action: uint8_t {
+			noAction = 0,
+			MarkEndOfLine,
+			MarkEndOfParagraph,
+			SkipWhitespace,
+		};
+		Action actions[256] = {MarkEndOfLine, noAction};
+		if (options.trim_outer_whitespace || options.dedent_lines || options.contract_lines_in_paragraph) {
+			actions['\t'] = SkipWhitespace;
+			actions['\v'] = SkipWhitespace;
+			actions[' '] = SkipWhitespace;
+		}
+		actions['\r'] = MarkEndOfLine;
+		actions['\n'] = MarkEndOfLine;
+		actions['\f'] = MarkEndOfLine;
 
-		// apply heuristic to estimate the number of lines that will be found
-		lines.reserve(d.size() / 10);
+		bool we_are_rewriting_the_text = (options.dedent_lines || options.contract_lines_in_paragraph || options.cleanup_diacritics || options.cleanup_punctuation || options.contract_hyphenated_words_at_EOL || options.unicode_normalization);
+
+		std::string_view d = file_content.content_view();
+		file_content.write_text_edge_sentinel();
+
+		// see if we have enough scratch space for the content rewriting that's going to happen.
+		// All options actually *reduce* the content size, so estimating the cost at 'source text length'
+		// is safe & swift!
+		std::string_view target = file_content.available_space_view();
+		if (target.size() < file_content.content_length() + TextBuffer::sentinel_size) {
+			LIBASSERT_ASSERT(false, "run-time should of course never get here, but there ARE TextBuffer usage scenarios where this COULD happen, so we must check. And you're better off we actually did!");
+			ec = std::make_error_code(std::errc::no_buffer_space);
+			return;
+		}
+
+		// apply heuristic to estimate the number of paragraphs that will be found
+		this->paragraphs.reserve(d.size() / 100);
 
 		// scan the response file:
+		// outer loop implies we're at a *paragraph edge* ==> paragraph start.
 		size_t failure_count = 0;
+		size_t paragraph_start_idx = 0;
+		size_t paragraph_dedent_start_idx = 0;
+		size_t paragraph_dedent_length = 0;
 		const auto* ptr = d.data();
-		for (size_t i = 0, l = d.size(); i < l; i++) {
-			while (is_blank(ptr[i])) {
-				i++;
-			}
-			switch (ptr[i]) {
-			case '\r':
-			case '\n':
-			case 0:
-				// end-of-line ~ empty line. ignore.
-				continue;
-
-			case '#':
-				if (options.accept_comment_lines) {
-					while (!is_eolz(ptr[i])) {
-						i++;
-					}
-					continue;
-				}
-				//[[fallthrough]]
-			default:
-				auto start = i;
-				// path MAY have INTERNAL whitespace:
-				while (!is_eolz(ptr[i])) {
-					i++;
-				}
-				i--;
-				// but trim off trailing whitespace!
+		//std::string_view::iterator dst_it = target.begin();
+		char* dst = const_cast<char*>(target.data());
+		for (size_t i = 0, l = d.size(); i < l; ) {
+			uint8_t c = ptr[i++];
+			switch (actions[c]) {
+			case SkipWhitespace:
 				while (is_blank(ptr[i])) {
 					i--;
 				}
+				continue;
+
+			case MarkEndOfLine:
+				// end-of-line ~ empty line. ignore; reset paragraph start markers.
+				paragraph_start_idx = i;
+				paragraph_dedent_start_idx = i;
+				continue;
+
+			[[likely]] case noAction:
+			default:
+				auto start = i - 1;
+				paragraph_dedent_length = start - paragraph_dedent_start_idx;
+
+				*dst++ = c;
+
+				// rewrite the new paragraph following the options.
+				// 
+				// source text path MAY have INTERNAL whitespace: find the terminating (double) CR/LF/NUL:
+				// paragraphs are marked by double-newline a la MarkDown, but the tough part is various
+				// files can have Classic MAC CR+CR, or UNIX LF+LF or MSDOS/Win CR/LF + CR/LF line endings...
+				// or a mix thereof. So we better base this 'double newline marker' approach off
+				// the rewritten content?
+				//
+				// We're safe scanning multiple NULs at the end of the source text as we have written
+				// a `sentinel_size`-wide chunk of NULs, where `sentinel_size > 2`, so we're
+				// still within safe buffer space bounds while detecting a 'paragraph end' the old-fashioned way.
+				// Meanshwile, we have checked our scratch space has sufficient space reserved for a similar
+				// long NUL-sentinel, so either way we won't be barging off into unallocated memory...
+
+				// we're inside a *line* (which we will rewrite), just beyond the initial indent ('dedent' option).
+
+				// 0x00ad   Soft hyphen is typically printed as a hyphen (-) in terminals.
+
+
+				bool we_are_rewriting_the_text = (options.dedent_lines || options.contract_lines_in_paragraph || options.cleanup_diacritics || options.cleanup_punctuation || options.contract_hyphenated_words_at_EOL || options.unicode_normalization);
+
+#if 0
+
+				// &npsp; &thinsp; etc are treated as normal spaces
+				std::string get_dec_entity(std::size_t cp) {
+					std::string value;
+					if (cp <= 0x7Ful) { // 127, ascii
+						if (cp < 32) { // Treat initial 32 ASCII characters as spaces
+							value.push_back(' ');
+							return value;
+						}
+						value.push_back((unsigned char)cp);
+					} else if (cp <= 0x7FFul) { // 2047, 2 bytes
+						if (cp == 160) { // nbsp
+							value.push_back(' ');
+							return value;
+						} else if (cp == 173) { // soft hyphen
+							return value;
+						} else if (cp >= 8194 and cp <= 8202) { // thinsp, ensp, emsp, etc
+							value.push_back(' ');
+							return value;
+						} else if (cp == 8203) { // zwsp
+							return value;
+						} else if (cp == 9287) { // mediumsp
+							value.push_back(' ');
+							return value;
+						}
+						value.push_back((unsigned char)(0xC0 | (cp >> 6)));
+						value.push_back((unsigned char)(0x80 | (cp & 0x3F)));
+					} else if (cp <= 0xFFFFul) { // 65535, 3 bytes
+						value.push_back((unsigned char)(0xE0 | (cp >> 12)));
+						value.push_back((unsigned char)(0x80 | ((cp >> 6) & 0x3F)));
+						value.push_back((unsigned char)(0x80 | (cp & 0x3F)));
+					} else if (cp <= 0x10FFFFul) { // 1114111, 4 bytes
+						value.push_back((unsigned char)(0xF0 | (cp >> 18)));
+						value.push_back((unsigned char)(0x80 | ((cp >>12) & 0x3F)));
+						value.push_back((unsigned char)(0x80 | ((cp >> 6) & 0x3F)));
+						value.push_back((unsigned char)(0x80 | (cp & 0x3F)));
+					}
+					return value;
+				}
+
+
+
+			} while (((*in >= 0x20) && (*in <= 0x7F)) || (*in == 0x09) || (*in == 0x0a));
+
+			=====================
+				Argument Substitution
+				=====================
+
+				Before a rule can be matched, any %-variables must be substituted. These are defined
+				in the same configuration file as the rules, and look something like:
+			%W=[\w\-]++
+				or:
+				%D=//ldml/numbers/defaultNumberingSystem
+
+				The first case can be thought of as just a snippet of regular expression (in this case
+				something that matches hyphen separated words) and, importantly, here '[' and ']' are
+				treated as regular expression metacharacters. These arguments are static and wil be
+				substituted exactly as-is into the regular expression to be used for matching.
+
+				The second case (used exactly once) is a dynamic argument which references a CLDR value
+				in the set of data being transformed. This is simply indicated by the fact that it starts
+				with '//'. This path is resolved and the value is substituted just prior to matching.
+
+				Variable names are limited to a single upper-case letter (A-Z).
+
+
+
+
+#endif
+
+				while (actions[ptr[i++]] != MarkEndOfLine) {
+					;
+				}
+				const auto ei = i;
+				// but trim off trailing whitespace!
+				// 
+				//if (options.trim_outer_whitespace) {    --> only then does state `SkipWhitespace` exist in the actions table.
+				while (actions[ptr[--i]] == SkipWhitespace) {
+					;
+				}
 				i++;
+				//}
 
 				std::string_view line(ptr + start, i - start);
 				assert(!line.empty());
 
 				lines.push_back(line);
+
+				// small aid for CRLF line terminations in files: ptr[i-1] is probably the CR, so we might speed things up
+				// by quickly checking if ptr[i] is a LF:
+				i = ei;
+				if (actions[ptr[i]] == MarkEndOfLine) {
+					++i;
+				}
 				continue;
 			}
 		}
