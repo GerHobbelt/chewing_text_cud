@@ -38,6 +38,9 @@ namespace text_processing {
 	}
 #endif
 
+
+#ifdef HAS_EXTENDEDFILECONTENT_DEFINED
+
 	// parseContentAsLines():
 	// 
 	// a new implementation, after discovering the inner run-until-EOL loop takes up most of the time (~50%)
@@ -352,6 +355,8 @@ namespace text_processing {
 		ec.clear();
 		return;
 	}
+
+#endif
 
 }
 

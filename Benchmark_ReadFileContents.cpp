@@ -103,6 +103,9 @@ using namespace text_processing;
 
 namespace fs = std::filesystem;
 
+
+#ifdef HAS_FILEREADER_DEFINED
+
 static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\__sqlite-odbc-mud-etc.dirlist.txt";
 
 // nearly the fastest; the only drawback (IMO) is the slightly iffy way we need to deal
@@ -605,3 +608,4 @@ BENCHMARK_MAIN();
 
 #endif
 
+#endif

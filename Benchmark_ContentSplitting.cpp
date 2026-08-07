@@ -25,6 +25,8 @@ using namespace text_processing;
 
 namespace fs = std::filesystem;
 
+#ifdef HAS_EXTENDEDFILECONTENT_DEFINED
+
 static constexpr const char *testfilepath = "H:\\prj-tmp-chk\\tmp\\__sqlite-odbc-mud-etc.dirlist.txt"; // "___etc.dirlist.txt"; // "__scratch.dirlist.txt"; //"__sqlite-odbc-mud-etc.dirlist.txt";
 
 
@@ -408,4 +410,5 @@ BENCHMARK_F(SplitFileContentsFixture, BM_WithFixture_3)(benchmark::State& state)
 	state.SetItemsProcessed(state.iterations() * items_4_stats);
 }
 
+#endif
 

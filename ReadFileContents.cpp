@@ -17,6 +17,8 @@ namespace text_processing {
 
 	namespace fs = std::filesystem;
 
+#ifdef HAS_FILEREADER_DEFINED
+
 	FileReader::~FileReader() {
 		close();
 		data.clear();
@@ -209,6 +211,8 @@ namespace text_processing {
 			return std::unexpected{ErrorResponse{std::errc::no_such_file_or_directory, std::format("file \"{}\" does not exist.", p.generic_string())}};
 		});
 	}
+
+#endif
 
 }
 

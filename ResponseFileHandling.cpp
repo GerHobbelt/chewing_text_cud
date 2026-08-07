@@ -29,6 +29,8 @@ namespace text_processing {
 
 	namespace fs = std::filesystem;
 
+#ifdef HAS_RESPONSEFILESET_DEFINED
+
 	ResponseFilesSet::ResponseFilesSet(const TextBuffer &s) :
 		FileContent(s) {
 	}
@@ -117,6 +119,8 @@ namespace text_processing {
 
 		return std::move(data);
 	}
+
+#endif
 
 }
 

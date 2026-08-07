@@ -20,6 +20,8 @@ namespace text_processing {
 
 	using std::filesystem::path;
 
+#if 0
+
 	struct ResponsefileProcessingOptions {
 		float tolerated_nonexist_ratio = 0.0f;
 
@@ -44,6 +46,8 @@ namespace text_processing {
 	ResponseFileParseResult processAsResponseFile(const path& filepath, const searchPaths& search_paths = {}, const ResponsefileProcessingOptions &options = {});
 	ResponseFileParseResult processAsResponseFile(const std::string &response_file_content, const std::string& filepath, const searchPaths& search_paths = {}, const ResponsefileProcessingOptions &options = {});
 	ResponseFileParseResult processAsResponseFile(std::string &&response_file_content, const std::string& filepath, const searchPaths& search_paths = {}, const ResponsefileProcessingOptions &options = {});
+
+#endif
 
 }
 

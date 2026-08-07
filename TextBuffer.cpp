@@ -5,6 +5,8 @@
 
 namespace text_processing {
 
+#ifdef HAS_TEXTBUFFER_DEFINED
+
 	// local helper, which knows about our buffersize shenanigans in the TextBuffer class.
 	// Hence very local.  ;-)
 	static char *alloc_and_copy_string(const char *str, size_t strlength, size_t requested_buffer_size) {
@@ -282,6 +284,8 @@ namespace text_processing {
 		// plant a sentinel at the end.
 		write_text_edge_sentinel();
 	}
+
+#endif
 
 }
 

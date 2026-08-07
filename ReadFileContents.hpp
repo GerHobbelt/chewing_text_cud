@@ -10,6 +10,8 @@ namespace text_processing {
 
 	using std::filesystem::path;
 
+#if 0
+
 	struct FileContentProcessingOptions {
 		enum ParseMode : uint8_t {
 			ToTextLines = 0x01,
@@ -87,6 +89,7 @@ namespace text_processing {
 		std::expected<size_t, ErrorResponse> readAllContent(size_t amount);
 	};
 
+#endif
 
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <compare>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -44,6 +45,10 @@ namespace text_processing {
 	path NormalizePathToUnixSeparators(const path &filepath);
 
 	// ---------------------------------------------------------------
+
+	// forward decl
+	template <class _Elem, class _Traits>
+	class string_view;
 
 	template <class _Traits>
 	class string_view_iterator {
@@ -180,7 +185,7 @@ namespace text_processing {
 			return _offset == _Right._offset;
 		}
 
-		constexpr strong_ordering operator<=>(const string_view_iterator& _Right) const noexcept {
+		constexpr std::strong_ordering operator<=>(const string_view_iterator& _Right) const noexcept {
 			LIBASSERT_DEBUG_ASSERT(_data == _Right._data && _size == _Right._size,
 				"cannot compare incompatible string_view iterators");
 			return _offset <=> _Right._offset;
@@ -222,6 +227,7 @@ namespace text_processing {
 		size_type _offset   = 0;
 	};
 
+#if 0
 
 	template <class _Elem, class _Traits>
 		class string_view { // non-owning wrapper for any kind of contiguous character buffer
@@ -752,6 +758,7 @@ namespace text_processing {
 		void clear(void);
 	};
 
+#endif
 
 
 }
